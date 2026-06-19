@@ -15,10 +15,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "core"))
 from harness import HourOfWeekAverage, LastWeek, PERIOD, H  # noqa: E402
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 CA = ROOT / "data" / "ca"
 RESULTS = ROOT / "results"
 

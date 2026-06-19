@@ -8,13 +8,13 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "core"))
 from run_gba import load_years, impute_hour_of_week
 from holiday_model import special_day_keys
 from run_holiday_backtest import WeeklyBaseline, learn_factors
 from holiday_region import learn_scale
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 FIG = ROOT / "docs" / "research_notes" / "figures"
 
 

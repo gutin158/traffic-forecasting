@@ -15,13 +15,13 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "core"))
 from run_gba import load_years, impute_hour_of_week
 from holiday_model import special_day_keys
 from run_holiday_backtest import (WeeklyBaseline, HolidayAdjusted, learn_factors,
                                   _upd, _metrics, P, H, STRIDE)
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def learn_scale(base, v, keys, hod, shape, train_mask, tau):

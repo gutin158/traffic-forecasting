@@ -15,10 +15,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "core"))
 from run_gba import impute_hour_of_week  # reused imputation
 P = 168; SY = 52
-CA = Path(__file__).resolve().parents[1] / "data" / "ca"
+CA = Path(__file__).resolve().parents[2] / "data" / "ca"
 YEARS = [2017, 2018, 2019]
 
 

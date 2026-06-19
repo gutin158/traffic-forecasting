@@ -15,11 +15,11 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "core"))
 from run_gba import load_years, impute_hour_of_week
 from eda import seasonal_baseline
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 FIG = ROOT / "docs" / "research_notes" / "figures"
 P = 168
 CAND = [1, 2, 3, 4, 6, 8, 12, 24, 48, 72, 96, 120, 144, 168, 336]

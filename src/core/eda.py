@@ -14,11 +14,11 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from statsmodels.tsa.stattools import acf
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "core"))
 from run_gba import load_years, impute_hour_of_week  # noqa: E402
 from harness import PERIOD  # 168
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 FIG = ROOT / "docs" / "research_notes" / "figures"
 FIG.mkdir(parents=True, exist_ok=True)
 META = ROOT / "data" / "ca" / "ca_meta.csv"

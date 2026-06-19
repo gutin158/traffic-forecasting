@@ -23,12 +23,12 @@ import numpy as np
 import pandas as pd
 
 warnings.filterwarnings("ignore")
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "core"))
 from run_gba import load_years, impute_hour_of_week
 from sklearn.ensemble import HistGradientBoostingRegressor
 from statsmodels.tsa.holtwinters import Holt
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 P = 168
 S_PER_YEAR = 52
 HORIZONS = [1, 2, 4, 8]

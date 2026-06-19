@@ -21,13 +21,20 @@ the main working set; Greater LA and San Diego are used for a cross-regional tes
 ## Repository layout
 
 ```
-src/      analysis & modeling scripts (data processing, baselines, experiments)
+src/
+  core/         shared library: data loading, baselines, holiday model, metrics
+  data_prep/    download & process the raw LargeST files to hourly arrays
+  experiments/  the analysis & figure-generating scripts (one per result)
 docs/     research notes & reports (LaTeX + PDF), plus shareable advice notes
   research_notes/   notes 01–03, the unified paper, the best-rule report & slides,
                     the granularity-invariance math note, figures/
 results/  small JSON/CSV backtest summaries
 data/     NOT tracked — large & reproducible (see below)
 ```
+
+Experiment scripts import the shared code from `src/core/` and can be run directly,
+e.g. `python src/experiments/weekly_ladder.py`. See `src/README.md` for a one-line
+description of every script.
 
 ### Key documents (in `docs/research_notes/`)
 - `paper_multiweek_forecasting.pdf` — the unified paper (the full story).
@@ -46,7 +53,7 @@ hourly per-region arrays:
 # metadata + one yearly raw, then process a region (gba | gla | sd)
 kaggle datasets download liuxu77/largest -f ca_meta.csv      -p data/ca
 kaggle datasets download liuxu77/largest -f ca_his_raw_2019.h5 -p data/ca
-python src/process_largest.py 2019 gba --delete-raw
+python src/data_prep/process_largest.py 2019 gba --delete-raw
 ```
 
 The PEMS-BAY speed dataset (used for one comparison) is on

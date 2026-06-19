@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "core"))
 from run_gba import load_years, impute_hour_of_week
 
 P = 168
@@ -71,7 +71,7 @@ def main():
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-    FIG = Path(__file__).resolve().parents[1] / "docs" / "research_notes" / "figures"
+    FIG = Path(__file__).resolve().parents[2] / "docs" / "research_notes" / "figures"
     Hs = [r[0] for r in rows]
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4))
     ax1.plot(Hs, [r[2] for r in rows], "o-", label="trailing baseline", color="#c33")

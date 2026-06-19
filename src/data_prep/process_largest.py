@@ -13,7 +13,7 @@ import h5py
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 CA = ROOT / "data" / "ca"
 META = CA / "ca_meta.csv"
 REGIONS = {"gba": [4], "gla": [7, 8, 12], "sd": [11]}   # Bay Area / Greater LA / San Diego

@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "core"))
 from run_gba import load_years, impute_hour_of_week
 from holiday_model import special_day_keys
 from run_holiday_backtest import WeeklyBaseline, HolidayAdjusted, learn_factors
@@ -131,7 +131,7 @@ def main():
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-    FIG = Path(__file__).resolve().parents[1] / "docs" / "research_notes" / "figures"
+    FIG = Path(__file__).resolve().parents[2] / "docs" / "research_notes" / "figures"
     fig, ax = plt.subplots(figsize=(8, 4))
     bars = ax.bar(labels, mape_by_reg, color=["#c33", "#e90", "#3a7", "#06a"])
     ax.set_ylabel("hourly MAPE (%)"); ax.set_yscale("log")
