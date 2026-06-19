@@ -1,0 +1,26 @@
+# Data — large and reproducible from the download/processing scripts (see README)
+data/
+*.h5
+*.h5.zip
+*.npz
+*.zip
+
+# LaTeX build artifacts (keep .tex and .pdf, drop the rest)
+*.aux
+*.log
+*.out
+*.nav
+*.snm
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+
+# OS
+.DS_Store

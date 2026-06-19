@@ -1,0 +1,44 @@
+[
+  {
+    "forecaster": "hour_of_week_avg(n_weeks=4)",
+    "n_origins": 147,
+    "horizon": 168,
+    "n_sensors": 325,
+    "n_point_predictions": 8026200,
+    "RMSE": 4.455552648022848,
+    "MAE": 2.119358196479446,
+    "R2": 0.7633612763055981,
+    "sensor_R2_median": 0.7061884496371303,
+    "sensor_R2_p10": 0.34634685420404493,
+    "sensor_R2_p90": 0.874840249980994,
+    "sensor_RMSE_median": 4.16931472444426
+  },
+  {
+    "forecaster": "last_week",
+    "n_origins": 147,
+    "horizon": 168,
+    "n_sensors": 325,
+    "n_point_predictions": 8026200,
+    "RMSE": 5.345482665102951,
+    "MAE": 2.361411521350911,
+    "R2": 0.6593906968650665,
+    "sensor_R2_median": 0.5677093911568467,
+    "sensor_R2_p10": 0.07176612639071268,
+    "sensor_R2_p90": 0.8221812616617636,
+    "sensor_RMSE_median": 5.039741871481499
+  },
+  {
+    "forecaster": "hour_of_week_avg(n_weeks=8)",
+    "n_origins": 147,
+    "horizon": 168,
+    "n_sensors": 325,
+    "n_point_predictions": 8026200,
+    "RMSE": 4.377220860873403,
+    "MAE": 2.1457708508488893,
+    "R2": 0.771608690089154,
+    "sensor_R2_median": 0.7116649744593451,
+    "sensor_R2_p10": 0.3828406522672141,
+    "sensor_R2_p90": 0.8761624115130525,
+    "sensor_RMSE_median": 4.098193685630232
+  }
+]

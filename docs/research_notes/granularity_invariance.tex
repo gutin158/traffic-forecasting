@@ -1,0 +1,227 @@
+% Why a linear seasonal baseline is accurate at every bucketing granularity.
+% Compile: pdflatex granularity_invariance.tex
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue]{hyperref}
+\setlength{\emergencystretch}{3em}
+
+\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\Cov}{\operatorname{Cov}}
+
+\title{\textbf{Why a Linear Seasonal Baseline is Accurate\\ at Every Bucketing Granularity}}
+\author{Traffic Forecasting Project}
+\date{June 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+The calendar-adjusted seasonal baseline -- a recency-weighted average of the same
+hour-of-week, times a calendar factor -- is empirically accurate whether applied to
+a single sensor at hourly resolution, a region total, or a weekly aggregate. We
+explain why with two short results. \emph{Equivariance:} the baseline is a linear
+operator and therefore commutes with any linear aggregation, so the same model is
+automatically self-consistent at every granularity (forecasting then aggregating
+equals aggregating then forecasting). \emph{Signal-to-noise scaling:} the
+forecastable part is a low-rank, shared seasonal signal while the residual is
+high-rank idiosyncratic noise, so aggregation amplifies signal coherently
+($\propto n$) and averages noise incoherently ($\propto \sqrt{n}$), making the same
+model at least as accurate -- usually more -- as the buckets coarsen.
+\end{abstract}
+
+\section{Setup}
+
+Let $y_{i,t}$ be the series for unit $i\in\{1,\dots,N\}$ (e.g.\ a sensor) at hour
+$t$, with weekly period $P=168$. The \emph{seasonal baseline} is the linear filter
+\begin{equation}
+\hat y_{i,t} \;=\; (B y)_{i,t} \;=\; \sum_{k=1}^{K} w_k\, y_{i,\,t-Pk},
+\qquad w_k\ge 0,\quad \sum_{k=1}^{K} w_k = 1,
+\label{eq:B}
+\end{equation}
+i.e.\ a (possibly decaying) average over the same hour-of-week in the previous $K$
+weeks. The flat 4-week rule is $K=4$, $w_k=\tfrac14$; the EWMA rule is
+$w_k\propto\alpha^{k-1}$. The crucial structural facts about $B$ are that it is
+\textbf{linear}, \textbf{time-invariant}, and uses \textbf{the same weights for
+every unit $i$}.
+
+A \emph{granularity} is produced by a linear \emph{aggregation operator} $A$ that
+maps the fine series to a coarser one by summing over blocks of indices:
+\begin{align}
+\text{spatial:}&\quad (A^{\mathrm{sp}} y)_{R,t} = \sum_{i\in R} y_{i,t}
+  \quad(\text{sum over a set of units }R),\\
+\text{temporal:}&\quad (A^{\mathrm{tw}} y)_{i,w} = \sum_{h=0}^{P-1} y_{i,\,Pw+h}
+  \quad(\text{sum the }168\text{ hours of week }w).
+\end{align}
+(Means are the same up to a constant, so the argument is identical for averages.)
+
+We decompose the series into a predictable seasonal/level signal and zero-mean
+noise,
+\begin{equation}
+y_{i,t} \;=\; \mu_{i,t} \;+\; \varepsilon_{i,t},
+\qquad \mu_{i,t}=\ell_{i,t}\, s_{i,\phi(t)},\quad \E[\varepsilon_{i,t}]=0,
+\label{eq:decomp}
+\end{equation}
+where $\phi(t)=t\bmod P$ is the hour-of-week, $s_{i,\cdot}$ is a (slowly varying)
+weekly \emph{shape}, $\ell_{i,t}$ a slow \emph{level}, and $\varepsilon$ is the
+idiosyncratic, incident-driven residual. The baseline $B$ is a near-unbiased,
+low-variance estimator of $\mu$ (it averages recent same-phase values); its error
+is dominated by the irreducible noise $\varepsilon$.
+
+\section{Equivariance: one model at every granularity}
+
+\begin{proposition}[Aggregation equivariance]\label{prop:equi}
+For spatial aggregation, $B$ commutes with $A^{\mathrm{sp}}$ exactly:
+\[
+B\,A^{\mathrm{sp}} \;=\; A^{\mathrm{sp}}\,B .
+\]
+For whole-week temporal aggregation, the hourly baseline summed over a week equals
+the \emph{same-form} weekly baseline applied to the weekly totals:
+\[
+A^{\mathrm{tw}} B \;=\; B'\, A^{\mathrm{tw}},
+\]
+where $B'$ has identical weights $w_k$ but at weekly lags.
+\end{proposition}
+
+\begin{proof}
+Spatial, using linearity and that $w_k$ does not depend on $i$:
+\begin{align*}
+(B A^{\mathrm{sp}} y)_{R,t}
+&= \sum_{k} w_k (A^{\mathrm{sp}} y)_{R,t-Pk}
+ = \sum_{k} w_k \sum_{i\in R} y_{i,t-Pk}\\
+&= \sum_{i\in R} \sum_{k} w_k\, y_{i,t-Pk}
+ = (A^{\mathrm{sp}} B y)_{R,t}.
+\end{align*}
+Temporal, using that the lags $Pk$ are whole multiples of the aggregation block $P$:
+\begin{align*}
+(A^{\mathrm{tw}} B y)_{i,w}
+&= \sum_{h=0}^{P-1} \sum_{k} w_k\, y_{i,\,Pw+h-Pk}
+ = \sum_{k} w_k \sum_{h=0}^{P-1} y_{i,\,P(w-k)+h}\\
+&= \sum_{k} w_k\, (A^{\mathrm{tw}} y)_{i,\,w-k}
+ = (B' A^{\mathrm{tw}} y)_{i,w}. \qquad\qedhere
+\end{align*}
+\end{proof}
+
+\begin{corollary}[Self-coherence]\label{cor:coh}
+The fine-level forecasts sum exactly to the coarse-level forecast:
+$\sum_{i\in R}\hat y_{i,t} = \widehat{(A^{\mathrm{sp}}y)}_{R,t}$, and likewise for
+time. Hence \emph{a single model is simultaneously the model at every aggregation
+level}: one need not refit a different form per granularity, and forecasts made at
+different resolutions are automatically consistent.
+\end{corollary}
+
+\begin{remark}[The multiplicative calendar factor]
+The calendar-adjusted forecast is $\hat y^{\mathrm{adj}}_{i,t}=f_{i,t}\,(By)_{i,t}$.
+Aggregating, $\sum_{i\in R} f_{i,t}(By)_{i,t}=f_{R,t}\sum_{i\in R}(By)_{i,t}$ holds
+\emph{exactly} when the factor is uniform across the aggregated units,
+$f_{i,t}\equiv f_{R,t}$. A \emph{pooled} factor (one value per
+(holiday,\,hour-of-day), shared across units) satisfies this, so the calendar
+correction is coherent too; a heterogeneous per-unit factor makes the aggregate
+factor a baseline-weighted average of the unit factors, so equivariance becomes
+approximate. The linear backbone \eqref{eq:B} is always exactly coherent.
+\end{remark}
+
+\begin{remark}[Same weights]
+Equivariance is exact only if the \emph{same} weights $w_k$ are used at each level.
+Re-tuning the decay per granularity breaks it slightly; in practice a shared
+$\alpha$ keeps the hierarchy coherent.
+\end{remark}
+
+\section{Signal-to-noise improves under aggregation}
+
+Equivariance says the same model \emph{form} is correct everywhere; it does not by
+itself say the model is \emph{accurate} everywhere. Accuracy follows from how signal
+and noise scale under aggregation.
+
+Write the aggregate of $n$ units (a region, or one unit's weekly total over $n=P$
+hours) and split it via \eqref{eq:decomp} into an aggregate signal and an aggregate
+noise. Two facts distinguish them:
+\begin{itemize}
+\item \textbf{The signal is shared (coherent).} Every unit carries the \emph{same}
+  weekly rhythm $s_{\phi(t)}$, so the seasonal components add in phase: the aggregate
+  signal grows like $n\,\bar\mu$, and its variation across $t$ grows like $n$ times
+  the per-unit variation.
+\item \textbf{The noise is idiosyncratic (incoherent).} Incidents are local. With
+  per-unit noise variance $\sigma^2$ and pairwise correlation $\rho$,
+  \begin{equation}
+  \Var\!\Big(\textstyle\sum_{i=1}^{n}\varepsilon_{i,t}\Big)
+  = n\sigma^2 + n(n-1)\rho\,\sigma^2
+  = n\sigma^2\big[1+(n-1)\rho\big].
+  \label{eq:noisevar}
+  \end{equation}
+\end{itemize}
+
+\begin{proposition}[SNR scaling]\label{prop:snr}
+Let the aggregate signal scale as $n$ and the aggregate noise standard deviation be
+$\sigma\sqrt{n[1+(n-1)\rho]}$ from \eqref{eq:noisevar}. Then the
+\emph{relative} forecast error (noise-to-signal) of the baseline obeys
+\[
+\frac{\text{aggregate noise s.d.}}{\text{aggregate signal}}
+\;\sim\; \frac{\sigma}{\bar\mu}\,\sqrt{\frac{1+(n-1)\rho}{n}}
+\;\xrightarrow[n\to\infty]{}\;
+\begin{cases}
+0, & \rho = 0 \ (\text{idiosyncratic noise}),\\[4pt]
+\dfrac{\sigma}{\bar\mu}\sqrt{\rho}, & \rho > 0 \ (\text{common component}).
+\end{cases}
+\]
+Equivalently, the unexplained-variance fraction $1-R^2$ shrinks monotonically as the
+buckets coarsen, to $0$ if the residual noise is purely idiosyncratic and to a
+floor $\propto\rho$ if it has a shared component.
+\end{proposition}
+
+\begin{proof}
+Divide the aggregate noise s.d.\ $\sigma\sqrt{n[1+(n-1)\rho]}$ by the aggregate
+signal $\sim n\bar\mu$ to get $\frac{\sigma}{\bar\mu}\sqrt{(1+(n-1)\rho)/n}$. For
+$\rho=0$ this is $\frac{\sigma}{\bar\mu}n^{-1/2}\to0$; for $\rho>0$,
+$(1+(n-1)\rho)/n\to\rho$, giving the stated floor. Monotonicity in $n$ follows since
+$(1+(n-1)\rho)/n$ is decreasing for $\rho<1$.
+\end{proof}
+
+\noindent
+So coarser granularity carries a higher signal-to-noise ratio: the same seasonal
+model -- which captures $\mu$ and leaves $\varepsilon$ -- explains a larger fraction
+of variance. (Empirically the weekly $R^2$ exceeded the hourly $R^2$; part of that
+is this genuine noise-averaging, and part is the larger seasonal variance inflating
+the $R^2$ denominator -- the former is the real effect.)
+
+\section{Synthesis}
+
+The two results compose. Using the factor structure $\mu_{i,t}=\ell_{i,t}s_{i,\phi(t)}$:
+\begin{itemize}
+\item the signal $\mu$ is \textbf{low-rank and shared} -- a common deterministic
+  seasonal pattern, present at \emph{every} scale (self-similar: a weekly cycle
+  within a week, an annual cycle across weekly totals);
+\item the noise $\varepsilon$ is \textbf{high-rank and idiosyncratic}.
+\end{itemize}
+The baseline $B$ is a near-unbiased, low-variance estimator of $\mu$ at any scale.
+Aggregation then does two complementary things: by Proposition~\ref{prop:equi} it
+\emph{preserves the model's form and coherence}, and by
+Proposition~\ref{prop:snr} it \emph{amplifies the shared signal while averaging out
+the idiosyncratic noise}. Equivariance gives consistency across granularities; SNR
+scaling gives (weakly) increasing accuracy. Together:
+\begin{center}
+\fbox{\begin{minipage}{0.9\linewidth}\centering\vspace{2pt}
+\emph{one simple, correctly-specified linear seasonal model is automatically
+self-consistent and accurate at every bucketing granularity.}
+\vspace{2pt}\end{minipage}}
+\end{center}
+
+\paragraph{Caveats, all orthogonal to granularity.} Exact equivariance needs the
+same weights at each level and (for the multiplicative factor) a pooled, uniform
+calendar factor. Correlated residual noise ($\rho>0$) sets a floor on the
+SNR gain. And the \emph{bias} properties are scale-independent: the baseline's level
+estimate goes stale as the forecast horizon grows, and its structural assumption
+breaks at regime shifts (e.g.\ a demand shock) -- these inflate error at \emph{all}
+granularities, not at one.
+
+\end{document}

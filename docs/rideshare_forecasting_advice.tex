@@ -1,0 +1,165 @@
+% A "piece of advice" note for a practitioner forecasting rideshare demand
+% at 1-6 week horizons. Distilled from a study of week-ahead highway-traffic
+% forecasting (which shares the same skeleton).
+% Compile: pdflatex rideshare_forecasting_advice.tex
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue]{hyperref}
+\setlength{\emergencystretch}{3em}
+\setlist[enumerate]{itemsep=4pt,topsep=4pt}
+
+\title{\textbf{Forecasting Rideshare Demand at 1--6 Week Horizons}\\[3pt]
+\large A few pieces of advice}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+\vspace{-2.5em}
+
+\noindent\hrulefill
+
+\paragraph{Where this comes from.} These notes are distilled from a detailed study
+of \emph{week-ahead highway-traffic} forecasting. Rideshare demand shares its
+skeleton --- a dominant weekly\,$\times$\,daily seasonal cycle driven by human
+schedules, strong holiday/event sensitivity --- so the structural lessons transfer.
+But rideshare differs from highway traffic in ways that \emph{change where modeling
+pays}, and the 1--6 week horizon is its own regime. Here's what I'd tell you.
+
+\section{Start here (and don't skip it)}
+
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Build the calendar-adjusted seasonal baseline first, and make it the
+bar everything must clear.} Per zone, the rule is:
+\begin{center}
+\fbox{\begin{minipage}{0.9\linewidth}\centering\vspace{2pt}
+\textbf{forecast} $=$ (recency-weighted average of the same day-of-week-and-hour
+over the last few weeks) $\times$ (event/holiday factor on special days)
+\vspace{2pt}\end{minipage}}
+\end{center}
+The seasonal average uses geometrically-decaying weekly weights (one parameter);
+the factor is the historical ratio (actual\,/\,baseline) on that holiday/event,
+pooled over past occurrences. On highway flow this reached $R^2\approx0.95$ and a
+weekly-aggregate error around $3.5\%$, and \emph{nothing fancier beat it} ---
+autoregression, gradient boosting, pooled panel models, cross-unit features all
+tied or lost. Expect a similarly brutal baseline for rideshare. Anything you deploy
+must beat \emph{this}, in a leakage-free rolling backtest, before it earns its
+complexity.
+
+\item \textbf{Know which ``band'' 1--6 weeks lives in.} Write demand as
+\emph{level $\times$ seasonal shape $+$ noise}. The forecast horizon is a low-pass
+filter: as it grows, the short-range, spatial, surge-propagation signal (what
+real-time dispatch models exploit) decays away. By 1--6 weeks you are forecasting
+the \emph{seasonal backbone plus a slowly-moving level} --- almost none of the
+minutes-ahead structure survives. Practical consequence: \textbf{do not reach for
+the spatio-temporal deep nets built for short-horizon dispatch}; they shine at
+minutes, not weeks. Different horizon, different toolbox.
+\end{enumerate}
+
+\section{Where a learned model genuinely helps at 1--6 weeks}
+
+The honest framing: at this horizon a model cannot extract hidden signal from
+demand's \emph{own past} --- the seasonal baseline already captures it. Its value is
+in \emph{learning a known response} and \emph{reducing variance}. Rideshare,
+happily, has far more of both than highway traffic.
+
+\begin{enumerate}[leftmargin=*,resume]
+\item \textbf{Your \#1 lever: learn the known-ahead event \& calendar response.}
+Rideshare is much more event-driven than traffic --- concerts, sports, conventions,
+festivals, holidays, New Year's Eve, airport surges. The killer property is that
+these are \textbf{known weeks ahead}, so they need no covariate forecast. Generalize
+the hand-crafted holiday factor into a \emph{learned} event-response model
+(gradient boosting or hierarchical) with event metadata (venue, capacity, type)
+interacted with zone and time-of-day, plus per-zone heterogeneity. This is the
+clearest place a learned model beats the plain baseline at this horizon.
+
+\item \textbf{Model the level with macro / known covariates --- it is more dynamic
+than traffic's.} Highway traffic is a near-utility with a near-frozen level;
+rideshare is a \emph{discretionary} service whose level moves with employment,
+tourism (flight arrivals, hotel occupancy), fuel prices, competitor presence,
+marketing, and your own adoption curve. That level is partly forecastable from
+slowly-varying or known-ahead covariates. A structural / state-space model
+(level $+$ trend $+$ seasonal $+$ regression), or a global model with these inputs,
+is the right tool --- and it matters \emph{increasingly toward 6 weeks}, where level
+staleness, not the seasonal shape, dominates the error.
+
+\item \textbf{Exploit your panel --- pool across zones and cities.} You almost
+certainly have far more cross-sectional units than a sensor network (zones, hexes,
+cities) plus coupled series (demand, supply, ETA). A single \emph{global} model
+(DeepAR / temporal-fusion-transformer / global gradient boosting) with zone
+embeddings and shared covariates pools strength: it denoises sparse, low-demand
+zones and learns the event/calendar response far better than per-zone fits. This is
+where ``more data'' genuinely pays --- concentrated on the \emph{noisy-zone tail} and
+the \emph{shared response function}, not on mining each zone's own history.
+
+\item \textbf{Forecast distributions, not just point means.} Supply positioning,
+driver incentives, and surge decisions care about the \emph{spread and the tails},
+not the average. Even where your point forecast only ties the baseline, calibrated
+quantiles --- especially event-driven and regime-dependent uncertainty --- are
+high-value and genuinely model-amenable. Train on quantile/pinball loss and report
+calibration, not just MAPE.
+\end{enumerate}
+
+\section{Traps that will quietly cost you}
+
+\begin{enumerate}[leftmargin=*,resume]
+\item \textbf{Respect the known-ahead constraint --- and the surge-leakage trap.} At
+1--6 weeks you may only use covariates whose \emph{future} value is known at
+inference. Events, holidays, calendar, scheduled promotions and planned price
+changes: \emph{yes}. \textbf{Weather: no} --- you cannot forecast it 1--6 weeks out;
+at best fold in climatology, and never train on weather \emph{actuals} you won't
+have in production. \textbf{Price / surge is endogenous}: if you train demand on
+realized surge you leak badly (you won't know future surge, and surge itself
+responds to demand). Model demand at a reference price, or treat \emph{your own
+planned} pricing as a known input. This leakage silently inflates backtests and
+breaks on deployment.
+
+\item \textbf{Assume the seasonal shape drifts.} Traffic's weekly shape is frozen
+year to year; rideshare's is not (adoption, behavior change, work-from-home shifting
+commute\,$\leftrightarrow$\,leisure mix). Use \emph{adaptive} seasonality (EWMA over
+weeks, or a time-varying seasonal), refit on a schedule, and monitor for drift and
+regime breaks (a pandemic, a city launch, a competitor's exit). A static seasonal
+profile will slowly rot.
+
+\item \textbf{Get the evaluation right --- this is where most effort is wasted or
+misled.}
+  \begin{itemize}[itemsep=2pt,topsep=2pt]
+  \item Proper \emph{rolling-origin} backtests, with the known-ahead constraint
+    enforced (parameters fit only on data prior to each origin).
+  \item Beware \textbf{MAPE on low-demand zones}: tiny denominators explode it (we
+    saw $>$500\% on quiet hours that were forecast fine in absolute terms).
+    Aggregate, or use weighted / scaled / quantile metrics.
+  \item \textbf{Bucket} the errors --- event vs.\ normal days, by zone density, by
+    regime. The headline number hides exactly where you win and lose.
+  \item Always report \textbf{skill over the baseline} (item 1), not raw error.
+  \item Estimate the \textbf{predictability ceiling} (e.g.\ an oracle in-sample fit)
+    so you know how much headroom exists before you chase it.
+  \end{itemize}
+\end{enumerate}
+
+\section{The mindset}
+
+\begin{enumerate}[leftmargin=*,resume]
+\item \textbf{Complexity should follow information, not precede it.} A transformer
+will not beat a calendar average on the deterministic backbone --- that part is
+solved. Spend model complexity only where rideshare carries exploitable information
+\emph{beyond} the regular pattern: events, the macro-driven level, panel pooling,
+and the decision-relevant tails. The honest sequence is always: \emph{nail the
+baseline $\to$ measure where the variance and the headroom actually are $\to$ point
+the learned model exactly there.}
+\end{enumerate}
+
+\vspace{0.5em}
+\noindent\hrulefill
+
+\paragraph{The good news.} Highway traffic was the extreme case --- almost all
+deterministic backbone, little else --- which is why a one-parameter rule was
+unbeatable. Rideshare moves a lot of mass into the components where models earn
+their keep: events, macro coupling, a large panel, regime change, and a
+decision-coupled objective. So a well-aimed learned model has \emph{real} room here.
+The whole trick is that it be \emph{aimed}, not merely deployed.
+
+\end{document}
